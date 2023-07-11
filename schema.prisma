@@ -1,0 +1,56 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./e-imza.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Esign {
+  id            Int    @id @default(autoincrement())
+  firstName     String
+  lastName      String
+  tcno          String
+  email         String
+  telefon       String
+  serino        String
+  startdate     String
+  enddate       String
+  birth         String
+  uyruk         String
+  birthloc      String
+  secword       String
+  pazarlamaizni String
+  telefonizni   String
+  epostaizni    String
+  smsizni       String
+  teslimatadres String
+  teslimatil    String
+  teslimatilce  String
+  userId        Int
+  user          Users  @relation(fields: [userId], references: [id])
+}
+
+model Company {
+  id      Int     @id @default(autoincrement())
+  name    String
+  address String?
+  phone   String?
+  active  Boolean @default(true)
+  users   Users[]
+}
+
+model Users {
+  id        Int     @id @default(autoincrement())
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  password  String
+  role      String  @default("user")
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+  esigns    Esign[]
+  active    Boolean @default(true)
+}
