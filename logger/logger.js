@@ -74,7 +74,7 @@ async function uploadFile(service, fileName, destinationFileName, folderId) {
 async function main() {
     try {
         // Parametreleri belirle
-        const file = 'zd.txt';
+        const file = 'combined.log';
         const url = 'http://tzd.kamusm.gov.tr';
         const port = '80';
         const customerNo = '11726';
