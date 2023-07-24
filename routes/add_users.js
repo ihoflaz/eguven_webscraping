@@ -1,30 +1,36 @@
-var express = require('express');
-var router = express.Router();
+const express = require('express');
+const router = express.Router();
 const {PrismaClient} = require('@prisma/client');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const {PrismaClientKnownRequestError} = require("@prisma/client/runtime");
 
 const prisma = new PrismaClient();
 
 
-/* GET users listing. */
-router.get('/', function (req, res, next) {
-    res.send('respond with a resource');
-});
 router.post('/', async (req, res) => {
-    const {
-        companyId, // Add this
-        firstName,
-        lastName,
-        email,
-        phone,
-        password,
-    } = req.body;
+    try {
+        const {
+            firstName,
+            lastName,
+            email,
+            phone,
+            password,
+        } = req.body;
 
-    // Kullanıcı rol kontrolü
-    if (req.user.role === 'admin' || (req.user.role === 'user' && req.user.companyId === companyId)) {
         // Şifreyi bcrypt ile hash'leme
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Default permissions
+        const defaultPermissions = ['order:read', 'order:create'];
+
+        // Get the permissions from the database
+        const permissions = await prisma.permission.findMany({
+            where: {
+                name: {
+                    in: defaultPermissions,
+                },
+            },
+        });
 
         // Yeni kullanıcıyı oluştur
         const user = await prisma.users.create({
@@ -34,19 +40,37 @@ router.post('/', async (req, res) => {
                 email: email,
                 phone: phone,
                 password: hashedPassword,
-                companyId: req.user.role === 'admin' ? companyId : req.user.companyId, // Update this
-                role: 'user',
+                companyId: req.user.companyId,
             },
         });
+
+        // Add the default permissions to the user
+        for (const permission of permissions) {
+            await prisma.userPermission.create({
+                data: {
+                    userId: user.id,
+                    permissionId: permission.id,
+                },
+            });
+        }
 
         // Hassas bilgileri çıkar
         const userSafe = {...user, password: undefined};
 
         // Yeni kullanıcıyı (hassas bilgileri çıkarılmış haliyle) döndür
         res.json(userSafe);
-    } else {
-        // Yetkisiz istek
-        res.status(401).json({error: 'Yetkisiz istek'});
+    } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                const fieldName = error.meta.target[0];
+                const errorMessage = `${fieldName} is already in use. Please choose another one.`;
+                res.status(400).json({ error: errorMessage });
+            } else {
+                res.status(500).json({ error: error.message });
+            }
+        } else {
+            res.status(500).json({ error: error.message });
+        }
     }
 });
 

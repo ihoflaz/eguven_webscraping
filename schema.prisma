@@ -8,13 +8,13 @@ generator client {
 }
 
 model Esign {
-  id            Int    @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   firstName     String
   lastName      String
-  tcno          String
+  tcno          String    @unique
   email         String
   telefon       String
-  serino        String
+  serino        String    @unique
   startdate     String
   enddate       String
   birth         String
@@ -28,29 +28,58 @@ model Esign {
   teslimatadres String
   teslimatil    String
   teslimatilce  String
+  status        String?
+  statusDetails String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime? @updatedAt
   userId        Int
-  user          Users  @relation(fields: [userId], references: [id])
+  user          Users     @relation(fields: [userId], references: [id])
 }
 
 model Company {
-  id      Int     @id @default(autoincrement())
-  name    String
-  address String?
-  phone   String?
-  active  Boolean @default(true)
-  users   Users[]
+  id        Int       @id @default(autoincrement())
+  name      String
+  address   String?
+  phone     String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  users     Users[]
 }
 
 model Users {
-  id        Int     @id @default(autoincrement())
-  firstName String
-  lastName  String
-  email     String
-  phone     String
-  password  String
-  role      String  @default("user")
-  companyId Int
-  company   Company @relation(fields: [companyId], references: [id])
-  esigns    Esign[]
-  active    Boolean @default(true)
+  id             Int              @id @default(autoincrement())
+  firstName      String
+  lastName       String
+  email          String           @unique
+  phone          String           @unique
+  password       String
+  role           String           @default("user") // role middleware'lari duzenlenince silinecek
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime?        @updatedAt
+  companyId      Int
+  company        Company          @relation(fields: [companyId], references: [id])
+  esigns         Esign[]
+  active         Boolean          @default(true)
+  UserPermission UserPermission[]
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime?        @updatedAt
+  users       UserPermission[]
+}
+
+model UserPermission {
+  userId       Int
+  user         Users      @relation(fields: [userId], references: [id])
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime?  @updatedAt
+
+  @@id([userId, permissionId])
 }

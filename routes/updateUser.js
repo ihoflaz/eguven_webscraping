@@ -3,6 +3,10 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+function sanitizeUser(user) {
+    const { password, createdAt, updatedAt, ...userWithoutSensitiveData } = user;
+    return userWithoutSensitiveData;
+}
 router.put('/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
@@ -11,7 +15,8 @@ router.put('/:id', async (req, res) => {
             where: { id },
             data,
         });
-        res.json(updatedUser);
+        const sanitizedUser = sanitizeUser(updatedUser);
+        res.json(sanitizedUser);
     } catch (err) {
         console.error(err);
         res.status(500).send('An error occurred while updating the company');

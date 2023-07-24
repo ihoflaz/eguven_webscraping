@@ -6,8 +6,13 @@ const router = express.Router();
 
 // Hassas bilgileri çıkaran yardımcı fonksiyon
 function sanitizeUser(user) {
-    const { password, ...userWithoutSensitiveData } = user;
+    const { password, createdAt, updatedAt, ...userWithoutSensitiveData } = user;
     return userWithoutSensitiveData;
+}
+
+function sanitizeCompany(company) {
+    const { createdAt, updatedAt, ...companyWithoutSensitiveData } = company;
+    return companyWithoutSensitiveData;
 }
 
 router.post('/', async (req, res) => {
@@ -20,14 +25,13 @@ router.post('/', async (req, res) => {
                     users: true,
                 },
             });
-            // Şirketlerin kullanıcılarındaki hassas bilgileri çıkar
+            // Şirketlerin ve kullanıcılarının hassas bilgilerini çıkar
             const sanitizedCompanies = companies.map(company => ({
-                ...company,
+                ...sanitizeCompany(company),
                 users: company.users.map(sanitizeUser),
             }));
 
-            const esigns = await prisma.esign.findMany();
-            res.json({ companies: sanitizedCompanies, esigns });
+            res.json({ companies: sanitizedCompanies });
         } else {
             // Sadece kullanıcıya ait verileri getir
             const company = await prisma.company.findUnique({
@@ -38,9 +42,9 @@ router.post('/', async (req, res) => {
                     users: true,
                 },
             });
-            // Şirketin kullanıcılarındaki hassas bilgileri çıkar
+            // Şirketin ve kullanıcılarının hassas bilgilerini çıkar
             const sanitizedCompany = {
-                ...company,
+                ...sanitizeCompany(company),
                 users: company.users.map(sanitizeUser),
             };
 

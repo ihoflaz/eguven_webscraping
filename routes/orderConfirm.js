@@ -6,58 +6,23 @@ const {PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 const Queue = require('bull');
 
-const myQueue = new Queue('myQueue');
-
 const proxy = '192.168.127.25';
 const username = 'mimsoft1';
 const password = 'EgfiM2023*';
 
-router.get('/', (req, res) => {
-    res.send('eguven')
-})
+const confirmationQueue = new Queue('confirmationQueue');
 
-myQueue.process(async (job) => {
+confirmationQueue.process(async (job) => {
     const {data, user} = job.data;
     try {
-        const createdEsign = await prisma.esign.create({
-            data: {
-                firstName: data.firstName,
-                lastName: data.lastName,
-                tcno: data.tcno,
-                email: data.email,
-                telefon: data.telefon,
-                serino: data.serino,
-                startdate: data.startdate,
-                enddate: data.enddate,
-                birth: data.birth,
-                uyruk: data.uyruk,
-                birthloc: data.birthloc,
-                secword: data.secword,
-                pazarlamaizni: data.pazarlamaizni,
-                telefonizni: data.telefonizni,
-                epostaizni: data.epostaizni,
-                smsizni: data.smsizni,
-                teslimatadres: data.teslimatadres,
-                teslimatil: data.teslimatil,
-                teslimatilce: data.teslimatilce,
-                userId: user.id,
-            },
-        });
-
-        console.log(data);
-        console.log('Created Esign:', createdEsign);
         const originalUrl = `http://${proxy}`;
         const newProxyUrl = await proxyChain.anonymizeProxy(originalUrl);
         const browser = await puppeteer.launch({
+            defaultViewport: null,
             headless: false,
             args: ['--start-maximized', `${newProxyUrl}`],
         });
         const page = await browser.newPage();
-        await page.setViewport({
-            width: 1920, // tarayıcının max width değeri alınmalı
-            height: 1080, // tarayıcının max height değeri alınmalı
-            deviceScaleFactor: 1,
-        });
         await page.authenticate({username, password});
         await page.goto('http://192.168.127.25', {waitUntil: 'networkidle0'});
 
@@ -109,10 +74,12 @@ myQueue.process(async (job) => {
         input = await getInput(page, 'E-posta');
         await input.click({clickCount: 3});
         await page.keyboard.press('Backspace');
+        await new Promise(r => setTimeout(r, 500));
         await input.type(data.email);
         input = await getInput(page, 'Cep Telefonu');
         await input.click({clickCount: 3});
         await page.keyboard.press('Backspace');
+        await new Promise(r => setTimeout(r, 500));
         await input.type(data.telefon);
         input = await getInput(page, 'TC Seri No');
         await input.click({clickCount: 3});
@@ -122,7 +89,7 @@ myQueue.process(async (job) => {
         await input.click({clickCount: 1});
         await input.click({clickCount: 1});
         await input.type(data.startdate);
-        input = await getInput(page, 'Sertifika Bitiş Tarihi'); //sertifika başlangıç tarihinden 3 yıl fazla olacak
+        input = await getInput(page, 'Sertifika Bitiş Tarihi');
         await input.click({clickCount: 1});
         await input.click({clickCount: 1});
         await input.type(data.enddate);
@@ -180,7 +147,11 @@ myQueue.process(async (job) => {
 
         // Click on the link that opens the new tab
         await page.waitForSelector('[aria-label="Kaydet"]');
-        await page.click('[aria-label="Kaydet"]');
+
+
+
+
+        /*await page.click('[aria-label="Kaydet"]');
         await new Promise(r => setTimeout(r, 3000));
         await page.waitForSelector('[aria-label="İşlemler"]');
         await page.click('[aria-label="İşlemler"]');
@@ -215,26 +186,74 @@ myQueue.process(async (job) => {
         await newPage.waitForNavigation({waitUntil: 'networkidle0'});
 
 
-        /* await browser.close(); */
+        /!* await browser.close(); *!/
 
-        await proxyChain.closeAnonymizedProxy(newProxyUrl, true);
+        await proxyChain.closeAnonymizedProxy(newProxyUrl, true);*/
+
+        await prisma.esign.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                status: 'Müşteri Onayı Bekleniyor',
+                statusDetails: 'Müşteri Onayı Bekleniyor',
+            },
+        });
+
+        return true;
     } catch (error) {
         console.error('Error:', error);
+        // If an error occurs, update the order status to 'Error' and add the error message
+        await prisma.esign.update({
+            where: {
+                id: data.id,
+            },
+            data: {
+                status: 'Hata',
+                statusDetails: error.message, // Add the error message
+            },
+        });
+        return false;
     }
 });
 
-router.post('/', async (req, res) => {
-    const data = req.body;
+router.post('/:id', async (req, res) => {
+    const id = parseInt(req.params.id);
     const user = req.user;
+    // Get the order with the provided id
+    const order = await prisma.esign.findUnique({
+        where: {
+            id: id,
+        },
+    });
 
-    // Burada kuyruğa yeni bir iş ekleyebilirsiniz
-    await myQueue.add({data, user});
-    res.send('Success');
-});
+    if (!order) {
+        res.status(404).json({ error: 'Order not found' });
+        return;
+    }
 
-router.get('/jobCounts', async (req, res) => {
-    const jobCounts = await myQueue.getJobCounts();
-    res.json(jobCounts);
+    // Initially set the order status to 'Processing'
+    await prisma.esign.update({
+        where: {
+            id: id,
+        },
+        data: {
+            status: 'İşleniyor',
+            statusDetails: "Siparisiniz kuyruga alindi", // Clear any previous error messages
+        },
+    });
+
+    // Add the order to the confirmation queue
+    await confirmationQueue.add({data: order, user});
+
+    // Return the updated order
+    const updatedOrder = await prisma.esign.findUnique({
+        where: {
+            id: id,
+        },
+    });
+
+    res.json(updatedOrder);
 });
 
 module.exports = router;
