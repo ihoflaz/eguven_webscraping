@@ -3,11 +3,11 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { PrismaClient, PrismaClientKnownRequestError } = require('@prisma/client');
+const uuid = require("uuid");
 const prisma = new PrismaClient();
 
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    console.log(req.body);
 
     // Kullanıcı adı ve şifre kontrolü
     const user = await prisma.users.findFirst({
@@ -43,6 +43,8 @@ router.post('/register', async (req, res) => {
             companyName,
             companyAddress,
             companyPhone,
+            companyEmail,
+            companyFormUrl,
             firstName,
             lastName,
             email,
@@ -59,11 +61,23 @@ router.post('/register', async (req, res) => {
                 name: companyName,
                 address: companyAddress,
                 phone: companyPhone,
+                email: companyEmail,
+                formUrl: companyFormUrl,
+            },
+        });
+
+        // Create a unique refId for the company
+        const companyRefId = uuid.v4();
+        await prisma.companyRefId.create({
+            data: {
+                refId: companyRefId,
+                companyId: company.id,
+                active: true,
             },
         });
 
         // Default permissions
-        const defaultPermissions = ['user:create', 'user:read', 'user:update'];
+        const defaultPermissions = ['user:create', 'user:read', 'user:update', 'order:create', 'order:read', 'order:update'];
 
         // Get the permissions from the database
         const permissions = await prisma.permission.findMany({
@@ -83,6 +97,7 @@ router.post('/register', async (req, res) => {
                 phone: phone,
                 password: hashedPassword,
                 companyId: company.id,
+                role: 'editor',
             },
         });
 
@@ -96,7 +111,17 @@ router.post('/register', async (req, res) => {
             });
         }
 
-        res.json({success: true, message: 'Kayıt işlemi başarılı'});
+        // Create a unique refId for the user
+        const userRefId = uuid.v4();
+        await prisma.userRefId.create({
+            data: {
+                refId: userRefId,
+                userId: user.id,
+                active: true,
+            },
+        });
+
+        res.json({success: true, message: 'Kayıt işlemi başarılı', companyRefId: companyRefId, userRefId: userRefId});
     } catch (error) {
         if (error instanceof PrismaClientKnownRequestError) {
             if (error.code === 'P2002') {

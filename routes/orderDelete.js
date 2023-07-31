@@ -3,12 +3,18 @@ const router = express.Router();
 const {PrismaClient} = require('@prisma/client');
 const prisma = new PrismaClient();
 
-router.post('/', async (req, res) => {
+router.post('/:id', async (req, res) => {
     try {
         // Şirketin id'si
+        const id = parseInt(req.params.id);
         const companyId = req.user.companyId;
         const userId = req.user.id;
         const userRole = req.user.role;
+
+        // Siparişi sil
+        await prisma.esign.delete({
+            where: { id },
+        });
 
         // Rol kontrolü
         let esigns;

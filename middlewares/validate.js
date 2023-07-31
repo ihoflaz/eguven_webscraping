@@ -19,36 +19,8 @@ function isValidTel(tel) {
     return /^(\+90|0)?5\d{9}$/.test(tel);
 }
 
-function isValidDate(date) {
-    if (!/^\d{2}\.\d{2}\.\d{4}$/.test(date)) {
-        return false;
-    }
-
-    const parts = date.split('.');
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10);
-    const year = parseInt(parts[2], 10);
-
-    if (month < 1 || month > 12) {
-        return false;
-    }
-
-    const maxDays = [31, year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
-
-    return day > 0 && day <= maxDays;
-}
-
-function formatDate(date) {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}.${month}.${year}`;
-}
-
-function addYears(date, years) {
-    const newDate = new Date(date);
-    newDate.setFullYear(newDate.getFullYear() + years);
-    return newDate;
+function isValidSetYear(setYear) {
+    return /^[1-3]{1}$/.test(setYear);
 }
 
 function validate(data) {
@@ -73,11 +45,8 @@ function validate(data) {
     if (!data.serino) {
         errors.push({input: 'serino', message: 'Seri No is required'});
     }
-    if (!data.startdate) {
-        errors.push({input: 'startdate', message: 'Startdate is required'});
-    }
-    if (!data.enddate) {
-        errors.push({input: 'enddate', message: 'Enddate is required'});
+    if (!data.setYear) {
+        errors.push({input: 'setYear', message: 'Set Year is required'});
     }
     if (!data.birth) {
         errors.push({input: 'birth', message: 'Birthdate is required'});
@@ -136,27 +105,12 @@ function validate(data) {
         errors.push({input: 'telefon', message: 'Invalid Telephone format'});
     }
 
-    // Check if startdate and enddate are valid
-    if (!isValidDate(data.startdate)) {
-        errors.push({input: 'startdate', message: 'Invalid Startdate format'});
-    } else if (data.startdate !== formatDate(new Date())) {
-        errors.push({input: 'startdate', message: `Startdate should be today's date (${formatDate(new Date())})`});
-    }
-    if (!isValidDate(data.enddate)) {
-        errors.push({input: 'enddate', message: 'Invalid Enddate format'});
-    } else if (data.enddate !== formatDate(addYears(new Date(), 3))) {
-        errors.push({
-            input: 'enddate',
-            message: `Enddate should be equal to Startdate + 3 years (${formatDate(addYears(new Date(), 3))})`
-        });
+    // Check if setYear is valid
+    if (!isValidSetYear(data.setYear)) {
+        errors.push({input: 'setYear', message: 'Invalid Set Year, should be 1, 2, or 3'});
     }
 
-    // Check if birth is valid
-    if (!isValidDate(data.birth)) {
-        errors.push({input: 'birth', message: 'Invalid Birthdate format'});
-    }
     return errors;
 }
-
 
 module.exports = validate;

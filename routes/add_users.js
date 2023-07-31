@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {PrismaClient} = require('@prisma/client');
 const bcrypt = require('bcrypt');
-const {PrismaClientKnownRequestError} = require("@prisma/client/runtime");
+const {PrismaClientKnownRequestError} = require("@prisma/client");
 
 const prisma = new PrismaClient();
 

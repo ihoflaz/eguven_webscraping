@@ -6,13 +6,7 @@ const prisma = new PrismaClient();
 router.put('/:id', async (req, res) => {
     try {
         let {permissions} = req.body;
-        console.log("permissions", permissions);
         const id = parseInt(req.params.id, 10);
-
-        // Eğer 'order:create' yetkisi varsa, diğer tüm yetkileri çıkar
-        if (permissions.includes('order:create')) {
-            permissions = ['order:create'];
-        }
 
         // Yeni yetkileri eklemek için tüm mevcut yetkileri çıkar
         await prisma.userPermission.deleteMany({
@@ -57,7 +51,6 @@ router.put('/:id', async (req, res) => {
                 }
             }
         });
-        console.log("updatedUser", updatedUser.UserPermission);
         // Güncellenmiş yetkileri döndür
         res.json(updatedUser.UserPermission);
     } catch (error) {

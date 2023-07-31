@@ -11,12 +11,11 @@ model Esign {
   id            Int       @id @default(autoincrement())
   firstName     String
   lastName      String
-  tcno          String    @unique
+  tcno          String
   email         String
   telefon       String
-  serino        String    @unique
-  startdate     String
-  enddate       String
+  serino        String
+  setYear       String?
   birth         String
   uyruk         String
   birthloc      String
@@ -30,6 +29,7 @@ model Esign {
   teslimatilce  String
   status        String?
   statusDetails String
+  message       String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime? @updatedAt
   userId        Int
@@ -37,14 +37,17 @@ model Esign {
 }
 
 model Company {
-  id        Int       @id @default(autoincrement())
+  id        Int            @id @default(autoincrement())
   name      String
   address   String?
   phone     String?
-  active    Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime? @updatedAt
+  email     String?
+  formUrl   String?
+  active    Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime?      @updatedAt
   users     Users[]
+  RefIds    CompanyRefId[]
 }
 
 model Users {
@@ -54,7 +57,7 @@ model Users {
   email          String           @unique
   phone          String           @unique
   password       String
-  role           String           @default("user") // role middleware'lari duzenlenince silinecek
+  role           String           @default("user")
   createdAt      DateTime         @default(now())
   updatedAt      DateTime?        @updatedAt
   companyId      Int
@@ -62,6 +65,8 @@ model Users {
   esigns         Esign[]
   active         Boolean          @default(true)
   UserPermission UserPermission[]
+  RefIds         UserRefId[]
+  PasswordReset  PasswordReset?
 }
 
 model Permission {
@@ -82,4 +87,30 @@ model UserPermission {
   updatedAt    DateTime?  @updatedAt
 
   @@id([userId, permissionId])
+}
+
+model UserRefId {
+  id     Int     @id @default(autoincrement())
+  refId  String  @unique
+  userId Int
+  active Boolean @default(true)
+  user   Users   @relation(fields: [userId], references: [id])
+}
+
+model CompanyRefId {
+  id        Int     @id @default(autoincrement())
+  refId     String  @unique
+  companyId Int
+  active    Boolean @default(true)
+  company   Company @relation(fields: [companyId], references: [id])
+}
+
+model PasswordReset {
+  id         Int       @id @default(autoincrement())
+  token      String    @unique
+  expiryDate DateTime
+  userId     Int       @unique
+  user       Users     @relation(fields: [userId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
 }

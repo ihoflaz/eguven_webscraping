@@ -17,8 +17,7 @@ orderQueue.process(async (job) => {
                 email: data.email,
                 telefon: data.telefon,
                 serino: data.serino,
-                startdate: data.startdate,
-                enddate: data.enddate,
+                setYear: data.setYear,
                 birth: data.birth,
                 uyruk: data.uyruk,
                 birthloc: data.birthloc,
@@ -32,6 +31,7 @@ orderQueue.process(async (job) => {
                 teslimatilce: data.teslimatilce,
                 status: 'Yeni',
                 statusDetails: 'Yeni Sipariş',
+                message: data.message,
                 userId: user.id,
             },
         });

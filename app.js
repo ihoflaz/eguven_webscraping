@@ -11,12 +11,17 @@ const validateData = require('./middlewares/validateData');
 const authUser = require('./middlewares/authUser');
 const tcKimlikCheck = require('./middlewares/tcKimlikCheck');
 const RequirePermission = require('./middlewares/requirePermission');
+const authRefId = require('./middlewares/authRefId');
+
 
 const addUsersRouter = require('./routes/add_users');
 const orderCreateRouter = require('./routes/orderCreate');
 const orderConfirmRouter = require('./routes/orderConfirm');
 const orderStatusRouter = require('./routes/orderStatus');
+const orderDeleteRouter = require('./routes/orderDelete');
 const authRouter = require('./routes/auth');
+const forgotPasswordRouter = require('./routes/forgotPassword');
+const resetPasswordRouter = require('./routes/resetPassword');
 const adminRouter = require('./routes/admin');
 const updateCompanyRouter = require('./routes/updateCompany');
 const updateUserRouter = require('./routes/updateUser');
@@ -24,6 +29,7 @@ const toggleRouter = require('./routes/toggle');
 const esignRouter = require('./routes/esign');
 const esignsRouter = require('./routes/esigns');
 const usersRouter = require('./routes/users');
+const userUrlRouter = require('./routes/userUrl');
 const permissionRouter = require('./routes/updatePermission');
 const permissionsRouter = require('./routes/permissions');
 
@@ -48,7 +54,6 @@ const logger = winston.createLogger({
         new winston.transports.Console()
     ],
 });
-
 
 app.use((req, res, next) => {
     // İstek bilgilerini logla
@@ -89,19 +94,23 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.use('/add_users', authUser, RequirePermission('user:read'), RequirePermission('user:create'), addUsersRouter);// create user
-app.use('/orderCreate', authUser, validateData, tcKimlikCheck, RequirePermission('order:create'), orderCreateRouter);// create order
+app.use('/orderCreate', authRefId, validateData, tcKimlikCheck, orderCreateRouter);// refId kullanildigi icin authUser middleware'i ve RequirePermission middleware'i kullanilmadi
 app.use('/orderConfirm', authUser, RequirePermission('order:read'), RequirePermission('order:update'), orderConfirmRouter);// read order, update order
 app.use('/orderStatus', authUser, RequirePermission('order:read'), RequirePermission('order:update'), orderStatusRouter);// read order, update order
+app.use('/orderDelete', authUser, RequirePermission('order:delete'), orderDeleteRouter);// delete order
 app.use('/company', authUser, RequirePermission('company:update'), updateCompanyRouter);// update company
 app.use('/user', authUser, RequirePermission('user:update'), updateUserRouter);// update user
 app.use('/toggle', authUser, RequirePermission('user:update'), toggleRouter);// update user
 app.use('/esign', authUser, RequirePermission('order:create'), esignRouter);// create order
 app.use('/esigns', authUser, RequirePermission('order:read'), esignsRouter);// read orders
-app.use('/auth', authRouter);// read user (login olurken normalde user:read verilecek ama order creater'in user:read yetkisi olmayacak)
+app.use('/auth',  authRouter);
+app.use('/forgotPassword',  forgotPasswordRouter);
+app.use('/resetPassword',  resetPasswordRouter);
 app.use('/admin', authUser, RequirePermission('company:create'), adminRouter);// all
 app.use('/users', authUser, RequirePermission('user:read'), usersRouter);// read user
+app.use('/userUrl', authUser, RequirePermission('user:read'), userUrlRouter);// read user
 app.use('/permission', authUser, RequirePermission('user:update'), permissionRouter);// update user
-app.use('/permissions', authUser, RequirePermission('user:read'), permissionsRouter);// read user
+app.use('/permissions', authUser, RequirePermission('order:read'), permissionsRouter);// read user
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

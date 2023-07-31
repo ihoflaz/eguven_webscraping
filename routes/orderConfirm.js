@@ -8,7 +8,7 @@ const Queue = require('bull');
 
 const proxy = '192.168.127.25';
 const username = 'mimsoft1';
-const password = 'EgfiM2023*';
+const password = 'MytP2023**';
 
 const confirmationQueue = new Queue('confirmationQueue');
 
@@ -116,7 +116,7 @@ confirmationQueue.process(async (job) => {
         input = await getInput(page, 'Güvenlik Sözcüğü');
         await input.click({clickCount: 3});
         await page.keyboard.press('Backspace');
-        await input.type(data.lastName); // güvenlik sözcüğü yerine soy ad değeri gönderilecek
+        await input.type(data.lastName);
         await page.keyboard.press('PageDown');
         await page.keyboard.press('PageDown');
         await page.keyboard.press('PageUp');
@@ -148,10 +148,7 @@ confirmationQueue.process(async (job) => {
         // Click on the link that opens the new tab
         await page.waitForSelector('[aria-label="Kaydet"]');
 
-
-
-
-        /*await page.click('[aria-label="Kaydet"]');
+        await page.click('[aria-label="Kaydet"]');
         await new Promise(r => setTimeout(r, 3000));
         await page.waitForSelector('[aria-label="İşlemler"]');
         await page.click('[aria-label="İşlemler"]');
@@ -180,15 +177,11 @@ confirmationQueue.process(async (job) => {
 
 
         await newPage.type('#txtyil', "3");
-        // await newPage.click('#btn');
-        await newPage.screenshot({path: 'screenshot3.png'});
-        await new Promise(r => setTimeout(r, 3000));
+        await newPage.click('#btn');
         await newPage.waitForNavigation({waitUntil: 'networkidle0'});
-
-
-        /!* await browser.close(); *!/
-
-        await proxyChain.closeAnonymizedProxy(newProxyUrl, true);*/
+        await newPage.screenshot({path: 'screenshot3.png'});
+        await browser.close();
+        await proxyChain.closeAnonymizedProxy(newProxyUrl, true);
 
         await prisma.esign.update({
             where: {
