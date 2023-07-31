@@ -97,14 +97,6 @@ model UserRefId {
   user   Users   @relation(fields: [userId], references: [id])
 }
 
-model CompanyRefId {
-  id        Int     @id @default(autoincrement())
-  refId     String  @unique
-  companyId Int
-  active    Boolean @default(true)
-  company   Company @relation(fields: [companyId], references: [id])
-}
-
 model PasswordReset {
   id         Int       @id @default(autoincrement())
   token      String    @unique
@@ -113,4 +105,12 @@ model PasswordReset {
   user       Users     @relation(fields: [userId], references: [id])
   createdAt  DateTime  @default(now())
   updatedAt  DateTime? @updatedAt
+}
+
+model CompanyRefId {
+  id        Int     @id @default(autoincrement())
+  refId     String  @unique
+  companyId Int
+  active    Boolean @default(true)
+  company   Company @relation(fields: [companyId], references: [id])
 }
