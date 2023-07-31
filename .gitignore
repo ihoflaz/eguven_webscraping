@@ -48,8 +48,8 @@ node_modules/
 jspm_packages/
 migrations/
 test/
-views/
 public/
+prisma/
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
